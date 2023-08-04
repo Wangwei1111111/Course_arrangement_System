@@ -1,0 +1,14 @@
+{
+ "argv": [
+  "D:/softw/Anaconda3-2019.10-Windows-x86_64/envs/CAS\\python.exe",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "Python 3 (ipykernel)",
+ "language": "python",
+ "metadata": {
+  "debugger": true
+ }
+}

@@ -1,0 +1,302 @@
+from ortools.sat.python import cp_model
+
+# 定义数据
+students = ["睿哲", "保烨", "殿朝", "李淼", "杨雯雯", "玉轩", "紫琦", "容俞", "董静", "中乔", "戈钊", 
+            "春奥", "富甲", "庆晓", "恒英", "力家", "子涵", "育良", "美娜", "思蒙", "慧敏", "王青", "姿琪"]
+teachers = ["传廷", "沈佳佳", "文琦", "贵强", "保发", "杜婷婷", "段", "王宇", "顾立", "延蒙", "沈琳琳", 
+            "于", "李战胜", "张书冬", "王炜", "郁", "马坤（高中）", "刘佳佳", "常", "志硕", "随欣", "张娜"]
+subjects = ["语文", "化学", "英语", "物理", "数学"]
+student_teacher_subject = [
+    ("睿哲", "沈佳佳", "语文"),
+    ("恒英", "沈佳佳", "语文"),
+    ("董静", "文琦", "语文"),
+    ("庆晓", "贵强", "化学"),
+    ("戈钊", "贵强", "化学"),
+    ("春奥", "贵强", "化学"),
+    ("力家", "贵强", "化学"),
+    ("中乔", "保发", "化学"),
+    ("王青", "保发", "化学"),
+    ("容俞", "保发", "化学"),
+    ("子涵", "杜婷婷", "化学"),
+    ("育良", "杜婷婷", "化学"),
+    ("紫琦", "杜婷婷", "化学"),
+    ("保烨", "杜婷婷", "化学"),
+    ("庆晓", "段", "英语"),
+    ("殿朝", "段", "英语"),
+    ("美娜", "段", "英语"),
+    ("戈钊", "王宇", "英语"),
+    ("中乔", "王宇", "英语"),
+    ("育良", "王宇", "英语"),
+    ("睿哲", "王宇", "英语"),
+    ("力家", "王宇", "英语"),
+    ("力家", "顾立", "物理"),
+    ("恒英", "顾立", "物理"),
+    ("中乔", "顾立", "物理"),
+    ("子涵", "顾立", "物理"),
+    ("育良", "延蒙", "物理"),
+    ("美娜", "延蒙", "物理"),
+    ("董静", "延蒙", "物理"),
+    ("中乔", "沈琳琳", "物理"),
+    ("庆晓", "沈琳琳", "物理"),
+    ("容俞", "于", "物理"),
+    ("子涵", "于", "物理"),
+    ("保烨", "于", "物理"),
+    ("王青", "李战胜", "物理"),
+    ("富甲", "李战胜", "物理"),
+    ("紫琦", "李战胜", "物理"),
+    ("力家", "张书冬", "数学"),
+    ("李淼", "张书冬", "数学"),
+    ("李淼", "传廷", "语文"),
+    ("美娜", "张书冬", "数学"),
+    ("玉轩", "张书冬", "数学"),
+    ("王青", "王炜", "数学"),
+    ("殿朝", "王炜", "数学"),
+    ("董静", "王炜", "数学"),
+    #("恒英", "晓晴", "数学"),
+    ("保烨", "郁", "数学"),
+    ("春奥", "郁", "数学"),
+    ("姿琪", "郁", "数学"),
+    ("慧敏", "马坤（高中）", "数学"),
+    ("子涵", "马坤（高中）", "数学"),
+    ("庆晓", "马坤（高中）", "数学"),
+    ("春奥", "常", "物理"),
+    ("育良", "志硕", "数学"),
+]
+
+# 在这里定义不上第几节课的学生列表和不上第几节课的老师列表
+students_no_class_1 = ["李淼","玉轩","董静","美娜","慧敏","睿哲"]
+students_no_class_2 = ["保烨","玉轩","董静","慧敏","睿哲"]
+students_no_class_3 = ["睿哲", "保烨", "殿朝", "李淼", "杨雯雯", "玉轩", "紫琦", "董静", "中乔", "戈钊", "富甲", "庆晓", "恒英", "子涵", "育良", "美娜", "思蒙", "王青", "姿琪"]
+students_no_class_4 = ["美娜","慧敏"]
+students_no_class_5 = ["保烨","慧敏"]
+students_no_class_6 = ["李淼","慧敏"]
+
+teachers_no_class_1 = ["沈佳佳","文琦","保发","段","马坤（高中）","常"]
+teachers_no_class_2 = ["沈佳佳","文琦","保发","段","马坤（高中）","常"]
+teachers_no_class_3 = ["传廷", "沈佳佳", "文琦", "杜婷婷", "段", "王宇", "顾立", "延蒙", "沈琳琳", "于", "李战胜", "张书冬", "王炜", "郁", "刘佳佳", "志硕", "随欣", "张娜"]#["文琦","沈琳琳","于"]
+teachers_no_class_4 = ["文琦","沈琳琳","于","常"]
+teachers_no_class_5 = ["文琦","延蒙","沈琳琳","于","常"]
+teachers_no_class_6 = ["延蒙","马坤（高中）","常"]
+
+num_days = 1
+max_classes_per_day = 6
+
+# 初始化 CP-SAT 模型
+model = cp_model.CpModel()
+
+# 创建变量
+schedule = {}
+for student in students:
+    for teacher in teachers:
+        for subject in subjects:
+            for day in range(num_days):
+                for class_num in range(max_classes_per_day):
+                    var_name = f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"
+                    schedule[var_name] = model.NewBoolVar(var_name)
+
+# 添加约束条件
+for student, teacher, subject in student_teacher_subject:
+    for day in range(num_days):
+        subject_classes = [
+            schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+            for class_num in range(max_classes_per_day)
+        ]
+        model.Add(sum(subject_classes) >= 1)
+
+# 在一天内，一个学生只能上一门课程一次
+for student in students:
+    for teacher in teachers:
+        for subject in subjects:
+            for day in range(num_days):
+                student_subject_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for class_num in range(max_classes_per_day)
+                ]
+                model.Add(sum(student_subject_classes) <= 1)
+
+# 学生每天最多上6节课
+for student in students:
+    for day in range(num_days):
+        student_classes = [
+            schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+            for teacher in teachers
+            for subject in subjects
+            for class_num in range(max_classes_per_day)
+        ]
+        model.Add(sum(student_classes) <= 6)
+
+# 老师每天最多上6节课
+for teacher in teachers:
+    for day in range(num_days):
+        teacher_classes = [
+            schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+            for student in students
+            for subject in subjects
+            for class_num in range(max_classes_per_day)
+        ]
+        model.Add(sum(teacher_classes) <= 6)
+
+# 在一个时间段内，学生只能上一门课程
+for student in students:
+    for day in range(num_days):
+        for class_num in range(max_classes_per_day):
+            student_classes = [
+                schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                for teacher in teachers
+                for subject in subjects
+            ]
+            model.Add(sum(student_classes) <= 1)
+
+# 在一个时间段内，老师只能教一门课程
+for teacher in teachers:
+    for day in range(num_days):
+        for class_num in range(max_classes_per_day):
+            teacher_classes = [
+                schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                for student in students
+                for subject in subjects
+            ]
+            model.Add(sum(teacher_classes) <= 1)
+
+# 添加新的约束条件：某些学生不上第n节课
+if students_no_class_1:
+    for student in students_no_class_1:
+        for day in range(num_days):
+            for class_num in range(1):  # 对于第1节课
+                student_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for teacher in teachers
+                    for subject in subjects
+                ]
+                model.Add(sum(student_classes) == 0)
+if students_no_class_2:
+    for student in students_no_class_2:
+        for day in range(num_days):
+            for class_num in range(1,2):  # 对于第2节课
+                student_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for teacher in teachers
+                    for subject in subjects
+                ]
+                model.Add(sum(student_classes) == 0)
+if students_no_class_3:
+    for student in students_no_class_3:
+        for day in range(num_days):
+            for class_num in range(2,3):  # 对于第3节课
+                student_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for teacher in teachers
+                    for subject in subjects
+                ]
+                model.Add(sum(student_classes) == 0)
+if students_no_class_4:
+    for student in students_no_class_4:
+        for day in range(num_days):
+            for class_num in range(3,4):  # 对于第4节课
+                student_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for teacher in teachers
+                    for subject in subjects
+                ]
+                model.Add(sum(student_classes) == 0)
+if students_no_class_5:
+    for student in students_no_class_5:
+        for day in range(num_days):
+            for class_num in range(4,5):  # 对于第5节课
+                student_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for teacher in teachers
+                    for subject in subjects
+                ]
+                model.Add(sum(student_classes) == 0)
+if students_no_class_6:
+    for student in students_no_class_6:
+        for day in range(num_days):
+            for class_num in range(5,6):  # 对于第6节课
+                student_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for teacher in teachers
+                    for subject in subjects
+                ]
+                model.Add(sum(student_classes) == 0)
+
+# 添加新的约束条件：某些老师不上第n节课
+if teachers_no_class_1:
+    for teacher in teachers_no_class_1:
+        for day in range(num_days):
+            for class_num in range(1):  # 对于第1节课
+                teacher_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for student in students
+                    for subject in subjects
+                ]
+                model.Add(sum(teacher_classes) == 0)
+if teachers_no_class_2:
+    for teacher in teachers_no_class_2:
+        for day in range(num_days):
+            for class_num in range(1,2):  # 对于第2节课
+                teacher_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for student in students
+                    for subject in subjects
+                ]
+                model.Add(sum(teacher_classes) == 0)
+if teachers_no_class_3:
+    for teacher in teachers_no_class_3:
+        for day in range(num_days):
+            for class_num in range(2,3):  # 对于第3节课
+                teacher_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for student in students
+                    for subject in subjects
+                ]
+                model.Add(sum(teacher_classes) == 0)
+if teachers_no_class_4:
+    for teacher in teachers_no_class_4:
+        for day in range(num_days):
+            for class_num in range(3,4):  # 对于第4节课
+                teacher_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for student in students
+                    for subject in subjects
+                ]
+                model.Add(sum(teacher_classes) == 0)
+if teachers_no_class_5:
+    for teacher in teachers_no_class_5:
+        for day in range(num_days):
+            for class_num in range(4, 5):  # 对于第5节课
+                teacher_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for student in students
+                    for subject in subjects
+                ]
+                model.Add(sum(teacher_classes) == 0)
+if teachers_no_class_6:
+    for teacher in teachers_no_class_6:
+        for day in range(num_days):
+            for class_num in range(5,6):  # 对于第6节课
+                teacher_classes = [
+                    schedule[f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"]
+                    for student in students
+                    for subject in subjects
+                ]
+                model.Add(sum(teacher_classes) == 0)
+
+# 求解模型
+solver = cp_model.CpSolver()
+status = solver.Solve(model)
+
+# 输出结果
+if status == cp_model.OPTIMAL:
+    for day in range(num_days):
+        print(f"Day {day + 1}:")
+        for class_num in range(max_classes_per_day):
+            print("第{}节课".format(class_num+1))
+            for student in students:
+                for teacher in teachers:
+                    for subject in subjects:
+                        var_name = f"s{student}_t{teacher}_{subject}_d{day}_c{class_num}"
+                        if solver.Value(schedule[var_name]) == 1:
+                            print(f"  {student} 跟 {teacher} 上 {subject} 课")
+else:
+    print("没有找到解决方案")

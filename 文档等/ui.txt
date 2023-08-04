@@ -1,0 +1,82 @@
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QStandardItemModel, QStandardItem
+import pymysql
+from mainwindow import Ui_MainWindow
+
+
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        self.setupUi(self)
+
+        # 创建数据库连接
+        self.db = pymysql.connect("localhost", "root", "123456", "jiaoyu")
+
+        # 创建QStandardItemModel
+        self.model = QStandardItemModel(self)
+        self.model2 = QStandardItemModel(self)
+
+        # 将模型设置到视图中
+        self.tableView.setModel(self.model)
+        self.tableView_2.setModel(self.model2)
+
+        # 查询数据并更新视图
+        self.updateTableView("student_subject", self.model)
+        self.updateTableView("student_his", self.model2)
+
+        # 绑定按钮点击事件
+        self.pushButton.clicked.connect(self.add)
+        self.pushButton_2.clicked.connect(self.delete)
+
+    def updateTableView(self, table_name, model):
+        # 执行查询
+        cursor = self.db.cursor()
+        cursor.execute(f"SELECT * FROM {table_name}")
+
+        # 清除旧的数据
+        model.removeRows(0, model.rowCount())
+
+        # 获取并设置新的数据
+        for row_data in cursor:
+            row = []
+            for item in row_data:
+                cell = QStandardItem(str(item))
+                row.append(cell)
+            model.appendRow(row)
+
+    def add(self):
+        # 获取tableview当前选中行
+        current_row = self.tableView.currentIndex().row()
+
+        if current_row >= 0:
+            # 获取选中行内容
+            data = []
+            for col in range(self.model.columnCount()):
+                item = self.model.item(current_row, col)
+                data.append(item.text())
+
+            # 将记录插入student_his表，并更新tableview_2
+            cursor = self.db.cursor()
+            values = "', '".join(data)
+            cursor.execute(f"INSERT INTO student_his VALUES ('{values}')")
+            self.db.commit()
+            self.updateTableView("student_his", self.model2)
+
+    def delete(self):
+        # 获取tableview_2当前选中行
+        current_row = self.tableView_2.currentIndex().row()
+
+        if current_row >= 0:
+            # 从student_his表中删除记录，并更新tableview_2
+            cursor = self.db.cursor()
+            item = self.model2.item(current_row, 0)
+            cursor.execute(f"DELETE FROM student_his WHERE id = {item.text()}")
+            self.db.commit()
+            self.updateTableView("student_his", self.model2)
+
+if __name__ == '__main__':
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())

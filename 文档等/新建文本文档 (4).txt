@@ -1,0 +1,20 @@
+# 导入数据
+students = db.get_students()
+teachers = db.get_teachers()
+subjects = ["语文", "化学", "英语", "物理", "数学"]
+student_teacher_subject = db.get_student_teacher_subject()
+
+# 创建一个列表，包含（学生，老师，课程）的元组，这些学生需要在一天内至少上两次他们指定的老师的课程
+special_student_teacher_subject = db.get_special_student_teacher_subject()
+
+# 定义特定的学生-老师-课程-时间组合
+specific_student_teacher_subject_time = db.get_specific_student_teacher_subject_time()
+
+# 学生的不可上课时间
+student_unavailable_periods = db.get_student_unavailable_periods()
+
+# 老师的不可用时间
+teacher_unavailable_periods = db.get_teacher_unavailable_periods()
+
+# 老师惩罚权重（默认为最低10）
+teacher_overtime = db.get_teacher_overtime()
